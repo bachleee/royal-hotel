@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import pyodbc
+import psycopg2
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -14,8 +14,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Chuỗi kết nối
-DB_CONN_STR = r"DRIVER={ODBC Driver 17 for SQL Server};SERVER=.\SQLEXPRESS;DATABASE=RoyalHotel;Trusted_Connection=yes;"
+# Chuỗi kết nối Neon Postgres của bạn
+DB_CONN_STR = "postgresql://neondb_owner:npg_m1EWhevZuA2B@ep-raspy-mode-b3af4k2k-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # --- KHAI BÁO CẤU TRÚC DỮ LIỆU ---
 class PhongCreate(BaseModel):
@@ -42,7 +42,7 @@ class DatPhongUpdate(BaseModel):
 # ==========================================
 @app.get("/api/phong")
 def lay_danh_sach_phong():
-    conn = pyodbc.connect(DB_CONN_STR)
+    conn = psycopg2.connect(DB_CONN_STR)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM PHONG")
     
@@ -52,7 +52,7 @@ def lay_danh_sach_phong():
             "MaPhong": row[0],
             "SoPhong": row[1],
             "LoaiPhong": row[2],
-            "Gia": row[3],
+            "Gia": float(row[3]),
             "TrangThai": row[4]
         }
         danh_sach_phong.append(phong)
@@ -62,10 +62,10 @@ def lay_danh_sach_phong():
 
 @app.post("/api/phong")
 def them_phong(phong: PhongCreate):
-    conn = pyodbc.connect(DB_CONN_STR)
+    conn = psycopg2.connect(DB_CONN_STR)
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO PHONG (MaPhong, SoPhong, LoaiPhong, Gia, TrangThai) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO PHONG (MaPhong, SoPhong, LoaiPhong, Gia, TrangThai) VALUES (%s, %s, %s, %s, %s)",
         (phong.MaPhong, phong.SoPhong, phong.LoaiPhong, phong.Gia, phong.TrangThai)
     )
     conn.commit()
@@ -74,19 +74,19 @@ def them_phong(phong: PhongCreate):
 
 @app.delete("/api/phong/{ma_phong}")
 def xoa_phong(ma_phong: int):
-    conn = pyodbc.connect(DB_CONN_STR)
+    conn = psycopg2.connect(DB_CONN_STR)
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM PHONG WHERE MaPhong = ?", ma_phong)
+    cursor.execute("DELETE FROM PHONG WHERE MaPhong = %s", (ma_phong,))
     conn.commit()
     conn.close()
     return {"message": "Xóa phòng thành công!"}
 
 @app.put("/api/phong/{ma_phong}")
 def sua_phong(ma_phong: int, phong: PhongCreate):
-    conn = pyodbc.connect(DB_CONN_STR)
+    conn = psycopg2.connect(DB_CONN_STR)
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE PHONG SET SoPhong = ?, LoaiPhong = ?, Gia = ?, TrangThai = ? WHERE MaPhong = ?",
+        "UPDATE PHONG SET SoPhong = %s, LoaiPhong = %s, Gia = %s, TrangThai = %s WHERE MaPhong = %s",
         (phong.SoPhong, phong.LoaiPhong, phong.Gia, phong.TrangThai, ma_phong)
     )
     conn.commit()
@@ -98,7 +98,7 @@ def sua_phong(ma_phong: int, phong: PhongCreate):
 # ==========================================
 @app.get("/api/datphong")
 def lay_danh_sach_dat_phong():
-    conn = pyodbc.connect(DB_CONN_STR)
+    conn = psycopg2.connect(DB_CONN_STR)
     cursor = conn.cursor()
     cursor.execute('''
         SELECT d.MaDatPhong, d.MaPhong, p.SoPhong, d.TenKhachHang, 
@@ -116,7 +116,7 @@ def lay_danh_sach_dat_phong():
             "SoDienThoai": row[4],
             "NgayNhan": str(row[5]),
             "NgayTra": str(row[6]),
-            "TongTien": row[7],
+            "TongTien": float(row[7]),
             "TrangThai": row[8]
         })
     conn.close()
@@ -124,10 +124,10 @@ def lay_danh_sach_dat_phong():
 
 @app.post("/api/datphong")
 def tao_don_dat_phong(don: DatPhongCreate):
-    conn = pyodbc.connect(DB_CONN_STR)
+    conn = psycopg2.connect(DB_CONN_STR)
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO DATPHONG (MaPhong, TenKhachHang, SoDienThoai, NgayNhan, NgayTra, TongTien, TrangThai) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO DATPHONG (MaPhong, TenKhachHang, SoDienThoai, NgayNhan, NgayTra, TongTien, TrangThai) VALUES (%s, %s, %s, %s, %s, %s, %s)",
         (don.MaPhong, don.TenKhachHang, don.SoDienThoai, don.NgayNhan, don.NgayTra, don.TongTien, 'Chờ duyệt')
     )
     conn.commit()
@@ -136,37 +136,37 @@ def tao_don_dat_phong(don: DatPhongCreate):
 
 @app.put("/api/datphong/{ma_dat_phong}")
 def cap_nhat_dat_phong(ma_dat_phong: int, data: DatPhongUpdate):
-    conn = pyodbc.connect(DB_CONN_STR)
+    conn = psycopg2.connect(DB_CONN_STR)
     cursor = conn.cursor()
-    cursor.execute("UPDATE DATPHONG SET TrangThai = ? WHERE MaDatPhong = ?", (data.TrangThai, ma_dat_phong))
+    cursor.execute("UPDATE DATPHONG SET TrangThai = %s WHERE MaDatPhong = %s", (data.TrangThai, ma_dat_phong))
     
-    # Ở đây dùng dấu nháy đơn '...' của Python thay vì N'...'
     if data.TrangThai == 'Đã duyệt':
-        cursor.execute("UPDATE PHONG SET TrangThai = N'Đang ở' WHERE MaPhong = ?", data.MaPhong)
+        cursor.execute("UPDATE PHONG SET TrangThai = 'Đang ở' WHERE MaPhong = %s", (data.MaPhong,))
     elif data.TrangThai == 'Đã hủy' or data.TrangThai == 'Đã trả phòng':
-        cursor.execute("UPDATE PHONG SET TrangThai = N'Sẵn sàng' WHERE MaPhong = ?", data.MaPhong)
+        cursor.execute("UPDATE PHONG SET TrangThai = 'Sẵn sàng' WHERE MaPhong = %s", (data.MaPhong,))
         
     conn.commit()
     conn.close()
     return {"message": "Cập nhật đơn thành công!"}
+
 # ==========================================
 # --- API THỐNG KÊ TỔNG QUAN ---
 # ==========================================
 @app.get("/api/thongke")
 def thong_ke_tong_quan():
-    conn = pyodbc.connect(DB_CONN_STR)
+    conn = psycopg2.connect(DB_CONN_STR)
     cursor = conn.cursor()
     
     cursor.execute("SELECT COUNT(*) FROM PHONG")
     tong_phong = cursor.fetchone()[0] or 0
     
-    cursor.execute("SELECT COUNT(*) FROM PHONG WHERE TrangThai = N'Sẵn sàng'")
+    cursor.execute("SELECT COUNT(*) FROM PHONG WHERE TrangThai = 'Sẵn sàng'")
     phong_trong = cursor.fetchone()[0] or 0
     
     cursor.execute("SELECT COUNT(*) FROM DATPHONG")
     tong_don = cursor.fetchone()[0] or 0
     
-    cursor.execute("SELECT SUM(TongTien) FROM DATPHONG WHERE TrangThai IN (N'Đã duyệt', N'Đã trả phòng')")
+    cursor.execute("SELECT SUM(TongTien) FROM DATPHONG WHERE TrangThai IN ('Đã duyệt', 'Đã trả phòng')")
     doanh_thu = cursor.fetchone()[0] or 0
     
     conn.close()
