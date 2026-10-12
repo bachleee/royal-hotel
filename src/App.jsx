@@ -55,7 +55,7 @@ const AppProvider = ({ children }) => {
   
   // SỬ LÝ TRIỆT ĐỂ LỖI FONT "SẴN SÀNG" / "TRỐNG"
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/phong")
+    fetch("https://royal-hotel-6xe9.onrender.com/api/phong")
       .then((res) => res.json())
       .then((data) => {
         const formattedRooms = data.map(item => {
@@ -340,13 +340,13 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     // 1. Lấy thống kê tổng
-    fetch("http://127.0.0.1:8000/api/thongke")
+    fetch("https://royal-hotel-6xe9.onrender.com/api/thongke")
       .then(res => res.json())
       .then(data => setStats(data))
       .catch(err => console.error("Lỗi tải thống kê:", err));
 
     // 2. Lấy 5 đơn đặt phòng mới nhất
-    fetch("http://127.0.0.1:8000/api/datphong")
+    fetch("https://royal-hotel-6xe9.onrender.com/api/datphong")
       .then(res => res.json())
       .then(data => {
         const sorted = data.sort((a, b) => b.MaDatPhong - a.MaDatPhong);
@@ -500,7 +500,7 @@ const AdminRooms = () => {
     };
     try {
       if (editingRoom) {
-        const response = await fetch(`http://127.0.0.1:8000/api/phong/${editingRoom.id}`, {
+        const response = await fetch(`https://royal-hotel-6xe9.onrender.com/api/phong/${editingRoom.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(roomData),
@@ -516,7 +516,7 @@ const AdminRooms = () => {
           showToast("Cập nhật phòng thành công!", "success");
         }
       } else {
-        const response = await fetch("http://127.0.0.1:8000/api/phong", {
+        const response = await fetch("https://royal-hotel-6xe9.onrender.com/api/phong", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(roomData),
@@ -542,7 +542,7 @@ const AdminRooms = () => {
   const handleDeleteRoom = async (roomId) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa phòng này?")) return;
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/phong/${roomId}`, { method: "DELETE" });
+      const response = await fetch(`https://royal-hotel-6xe9.onrender.com/api/phong/${roomId}`, { method: "DELETE" });
       if (response.ok) {
         setRooms(rooms.filter(room => room.id !== roomId));
         showToast("Xóa phòng thành công!", "success");
@@ -697,7 +697,7 @@ const AdminBookings = () => {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/datphong");
+      const response = await fetch("https://royal-hotel-6xe9.onrender.com/api/datphong");
       if (response.ok) {
         const data = await response.json();
         setBookingsList(data);
@@ -716,7 +716,7 @@ const AdminBookings = () => {
   const handleUpdateStatus = async (bookingId, roomId, newStatus, fullBookingData = null) => {
     if (!window.confirm(`Xác nhận chuyển trạng thái đơn thành: ${newStatus}?`)) return;
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/datphong/${bookingId}`, {
+      const response = await fetch(`https://royal-hotel-6xe9.onrender.com/api/datphong/${bookingId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ TrangThai: newStatus, MaPhong: roomId }),
@@ -1192,7 +1192,7 @@ const CustomerRoomsList = () => {
     };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/datphong", {
+      const response = await fetch("https://royal-hotel-6xe9.onrender.com/api/datphong", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bookingData),
